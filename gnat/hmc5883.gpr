@@ -9,7 +9,7 @@ project HMC5883 is
    for Library_Name use "hmc5883";
    for Library_Version use Project'Library_Name & ".so." & hmc5883_Config.Crate_Version;
 
-   for Source_Dirs use ("../source");  --  , "../source/impl");
+   for Source_Dirs use ("../source", "../source/impl");
    for Object_Dir use "../.obj/" & hmc5883_Config.Build_Profile;
    for Create_Missing_Dirs use "True";
    for Library_Dir use "../.lib";
