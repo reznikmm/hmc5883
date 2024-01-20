@@ -9,8 +9,6 @@ with Ada.Unchecked_Conversion;
 
 package body HMC5883.Internal is
 
-   I2C_Address : constant := 16#1E#;
-
    -------------------
    -- Check_Chip_Id --
    -------------------
@@ -33,6 +31,7 @@ package body HMC5883.Internal is
    procedure Configure
      (Device  : Device_Context;
       Value   : Sensor_Configuration;
+      Gain    : out Raw_Gain;
       Success : out Boolean)
    is
       use type HAL.UInt8;
@@ -83,7 +82,7 @@ package body HMC5883.Internal is
          elsif Value.ODR =  30.0  then 5
          else 6);
 
-      GN : constant Natural :=
+      GN : constant Raw_Gain :=
         (case Value.Gain is
             when 230  => 7,
             when 330  => 6,
@@ -99,6 +98,7 @@ package body HMC5883.Internal is
          01 => Cast_CRB ((GN => GN, Reserved => 0))];
    begin
       Write (Device, Data, Success);
+      Gain := GN;
    end Configure;
 
    ---------------
@@ -123,91 +123,44 @@ package body HMC5883.Internal is
    procedure Set_Mode
      (Device  : Device_Context;
       Mode    : Operating_Mode;
-      Success : out Boolean)
-   is
-      use type Interfaces.Integer_16;
+      Success : out Boolean) is
    begin
       Write (Device, [02 => Operating_Mode'Pos (Mode)], Success);
    end Set_Mode;
-
-   ------------------------------
-   -- Set_Accelerometer_Offset --
-   ------------------------------
-
-   procedure Set_Accelerometer_Offset
-     (Device  : Device_Context;
-      Value   : Raw_Vector;
-      Success : out Boolean)
-   is
-      use type Interfaces.Integer_16;
-
-      Data_X : constant HAL.UInt8_Array (16#77# .. 16#78#) :=
-        [HAL.UInt8 (Value.X / 256),
-         HAL.UInt8 (Value.X mod 256)];
-      Data_Y : constant HAL.UInt8_Array (16#7A# .. 16#7B#) :=
-        [HAL.UInt8 (Value.Y / 256),
-         HAL.UInt8 (Value.Y mod 256)];
-      Data_Z : constant HAL.UInt8_Array (16#7D# .. 16#7E#) :=
-        [HAL.UInt8 (Value.Z / 256),
-         HAL.UInt8 (Value.Z mod 256)];
-   begin
-      Write (Device, Data_X, Success);
-
-      if Success then
-         Write (Device, Data_Y, Success);
-      end if;
-
-      if Success then
-         Write (Device, Data_Z, Success);
-      end if;
-   end Set_Accelerometer_Offset;
 
    ----------------------
    -- Read_Measurement --
    ----------------------
 
-   --  procedure Read_Measurement
-   --    (Device  : Device_Context;
-   --     GFSR    : Gyroscope_Full_Scale_Range;
-   --     AFSR    : Accelerometer_Full_Scale_Range;
-   --     Gyro    : out Angular_Speed_Vector;
-   --     Accel   : out Acceleration_Vector;
-   --     Success : out Boolean)
-   --  is
-   --     subtype Int is Integer range -2**15 .. 2**15 - 1;
-   --     Raw : Raw_Vector;
-   --  begin
-   --     Read_Raw_Measurement
-   --       (Device, Value => Raw, Success => Success);
-   --
-   --     if Success then
-   --        case GFSR is
-   --           when 250 =>
-   --              Gyro :=
-   --                (X => Int (Raw_G.X) * Scaled_Angular_Speed'Small,
-   --                 Y => Int (Raw_G.Y) * Scaled_Angular_Speed'Small,
-   --                 Z => Int (Raw_G.Z) * Scaled_Angular_Speed'Small);
-   --           when 500  =>
-   --              Gyro :=
-   --                (X => 2 * Int (Raw_G.X) * Scaled_Angular_Speed'Small,
-   --                 Y => 2 * Int (Raw_G.Y) * Scaled_Angular_Speed'Small,
-   --                 Z => 2 * Int (Raw_G.Z) * Scaled_Angular_Speed'Small);
-   --           when 1000  =>
-   --              Gyro :=
-   --                (X => 4 * Int (Raw_G.X) * Scaled_Angular_Speed'Small,
-   --                 Y => 4 * Int (Raw_G.Y) * Scaled_Angular_Speed'Small,
-   --                 Z => 4 * Int (Raw_G.Z) * Scaled_Angular_Speed'Small);
-   --           when 2000 =>
-   --              Gyro :=
-   --                (X => 8 * Int (Raw_G.X) * Scaled_Angular_Speed'Small,
-   --                 Y => 8 * Int (Raw_G.Y) * Scaled_Angular_Speed'Small,
-   --                 Z => 8 * Int (Raw_G.Z) * Scaled_Angular_Speed'Small);
-   --        end case;
-   --     else
-   --        Gyro := (others => 0.0);
-   --        Accel := (others => 0.0);
-   --     end if;
-   --  end Read_Measurement;
+   procedure Read_Measurement
+     (Device  : Device_Context;
+      Gain    : Raw_Gain;
+      Value   : out Magnetic_Field_Vector;
+      Success : out Boolean)
+   is
+      subtype Valid is Valid_Raw_Value;
+
+      Overflow : constant Optional_Magnetic_Field := (Is_Overflow => True);
+
+      type Int is delta 1.0 range -2048.0 .. 2047.0;
+
+      Scale : constant Full_Scale_Range := Scale_Map (Gain);
+      Raw   : Raw_Vector;
+   begin
+      Read_Raw_Measurement (Device, Raw, Success);
+
+      if Success then
+         Value :=
+           (X => (if Raw.X in Valid then (False, Scale * Int (Raw.X))
+                  else Overflow),
+            Y => (if Raw.Y in Valid then (False, Scale * Int (Raw.Y))
+                  else Overflow),
+            Z => (if Raw.Z in Valid then (False, Scale * Int (Raw.Z))
+                  else Overflow));
+      else
+         Value := (X | Y | Z => Overflow);
+      end if;
+   end Read_Measurement;
 
    ----------------------
    -- Read_Measurement --

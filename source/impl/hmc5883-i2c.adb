@@ -9,8 +9,10 @@ with HMC5883.Internal;
 
 package body HMC5883.I2C is
 
+   I2C_Address : constant := 16#1E#;
+
    type Chip_Settings is record
-      Gain : Sensor_Gain := 1090;
+      Gain : Natural range 0 .. 7 := 1;
    end record;
 
    Chip : Chip_Settings := (Gain => <>);
@@ -41,11 +43,12 @@ package body HMC5883.I2C is
 
    procedure Configure
      (Value   : Sensor_Configuration;
-      Success : out Boolean) is
+      Success : out Boolean)
+   is
+      Gain : Natural range 0 .. 7;
    begin
-      Chip := (Gain => Value.Gain);
-
-      Sensor.Configure (Chip, Value, Success);
+      Sensor.Configure (Chip, Value, Gain, Success);
+      Chip.Gain := Gain;
    end Configure;
 
    ---------------
@@ -77,6 +80,17 @@ package body HMC5883.I2C is
 
       Success := Status = HAL.I2C.Ok;
    end Read;
+
+   ----------------------
+   -- Read_Measurement --
+   ----------------------
+
+   procedure Read_Measurement
+     (Value   : out Magnetic_Field_Vector;
+      Success : out Boolean) is
+   begin
+      Sensor.Read_Measurement (Chip, Chip.Gain, Value, Success);
+   end Read_Measurement;
 
    --------------------------
    -- Read_Raw_Measurement --

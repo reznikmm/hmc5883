@@ -65,15 +65,55 @@ package HMC5883 is
    --  Device is placed in idle mode.
    --
 
+   type Magnetic_Field is delta 1.0 / 2.0 ** 11 range -10.0 .. 10.0;
+   --  Magnetic flux density in Gauss
+
+   type Optional_Magnetic_Field (Is_Overflow : Boolean := True) is record
+      case Is_Overflow is
+         when False =>
+            Value : Magnetic_Field;
+         when True =>
+            null;
+      end case;
+   end record;
+
+   type Magnetic_Field_Vector is record
+      X, Y, Z : Optional_Magnetic_Field;
+   end record;
+
    Overflow : constant := -4096;
    --  In the event the ADC reading overflows or underflows for the given
    --  channel, or if there is a math overflow during the bias measurement,
    --  this data register will contain the value -4096.
+
+   Min_Valid_Raw_Value : constant := -2048;
+   Max_Valid_Raw_Value : constant := 2047;
+
+   subtype Valid_Raw_Value is Interfaces.Integer_16
+     range Min_Valid_Raw_Value .. Max_Valid_Raw_Value;
 
    type Raw_Vector is record
       X, Y, Z : Interfaces.Integer_16 range Overflow .. 2047;
    end record;
    --  A value read from the sensor in raw format. Normal value has range
    --  -2048 .. 2047, while -4096 means overflow.
+
+private
+
+   type Full_Scale_Range is delta 1.0 / 2.0 ** 23 range 0.0 .. 0.005;
+   --  Gauss per LSB
+
+   pragma Warnings
+     (Off, "static fixed-point value is not a multiple of Small");
+
+   Scale_Map : constant array (0 .. 7) of Full_Scale_Range :=
+     (0 => 1.0 / 1370.0,
+      1 => 1.0 / 1090.0,
+      2 => 1.0 / 820.0,
+      3 => 1.0 / 660.0,
+      4 => 1.0 / 440.0,
+      5 => 1.0 / 390.0,
+      6 => 1.0 / 330.0,
+      7 => 1.0 / 230.0);
 
 end HMC5883;

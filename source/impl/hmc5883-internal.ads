@@ -3,7 +3,7 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 ----------------------------------------------------------------
 
-with HAL.Time;
+with HAL;
 
 generic
    type Device_Context (<>) is limited private;
@@ -33,9 +33,12 @@ package HMC5883.Internal is
    function Check_Chip_Id (Device : Device_Context) return Boolean;
    --  Read the chip ID and check that it matches
 
+   subtype Raw_Gain is Natural range 0 .. 7;
+
    procedure Configure
      (Device  : Device_Context;
       Value   : Sensor_Configuration;
+      Gain    : out Raw_Gain;
       Success : out Boolean);
    --  Write Configuration Registers (00, 01)
 
@@ -48,13 +51,11 @@ package HMC5883.Internal is
    function Measuring (Device  : Device_Context) return Boolean;
    --  Check Status Register (09)
 
-   --  procedure Read_Measurement
-   --    (Device  : Device_Context;
-   --     GFSR    : Gyroscope_Full_Scale_Range;
-   --     AFSR    : Accelerometer_Full_Scale_Range;
-   --     Gyro    : out Angular_Speed_Vector;
-   --     Accel   : out Acceleration_Vector;
-   --     Success : out Boolean);
+   procedure Read_Measurement
+     (Device  : Device_Context;
+      Gain    : Raw_Gain;
+      Value   : out Magnetic_Field_Vector;
+      Success : out Boolean);
    --  Read scaled measurement values from the sensor
 
    procedure Read_Raw_Measurement

@@ -9,11 +9,9 @@
 --  HMC5883.I2C_Sensors package, which provides the appropriate tagged type.
 
 with HAL.I2C;
-with HAL.Time;
 
 generic
    I2C_Port    : not null HAL.I2C.Any_I2C_Port;
-   I2C_Address : HAL.UInt7 := 16#68#;  --  The HMC5883 7-bit I2C address
 package HMC5883.I2C is
 
    function Check_Chip_Id return Boolean;
@@ -35,9 +33,9 @@ package HMC5883.I2C is
    function Measuring return Boolean;
    --  Check if a measurement is in progress
 
-   --  procedure Read_Measurement
-   --    (Value   : out Value_Vector;
-   --     Success : out Boolean);
+   procedure Read_Measurement
+     (Value   : out Magnetic_Field_Vector;
+      Success : out Boolean);
    --  Read scaled measurement values from the sensor
 
    procedure Read_Raw_Measurement
