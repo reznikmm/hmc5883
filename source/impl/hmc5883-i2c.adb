@@ -15,7 +15,7 @@ package body HMC5883.I2C is
       Gain : Natural range 0 .. 7 := 1;
    end record;
 
-   Chip : Chip_Settings := (Gain => <>);
+   Chip : Chip_Settings;
 
    procedure Read
      (Ignore  : Chip_Settings;
@@ -51,11 +51,17 @@ package body HMC5883.I2C is
       Chip.Gain := Gain;
    end Configure;
 
-   ---------------
-   -- Measuring --
-   ---------------
+   -------------
+   -- Is_Idle --
+   -------------
 
-   function Measuring return Boolean is (Sensor.Measuring (Chip));
+   function Is_Idle return Boolean is (Sensor.Is_Idle (Chip));
+
+   ----------------
+   -- Is_Writing --
+   ----------------
+
+   function Is_Writing return Boolean is (Sensor.Is_Writing (Chip));
 
    ----------
    -- Read --

@@ -27,11 +27,15 @@ package HMC5883 is
    --
    --  The new gain setting is effective from the second measurement and on.
 
+   type Self_Test_Bias is (None, Positive, Negative);
+   --  Extra bias to self-test and temperature compensation.
+   --  When the extra bias applied the value 1.1 Gauss should be reported.
+
    type Sensor_Configuration is record
       Average : Average_Count := 1;
       ODR     : Output_Data_Rate := 15.0;
-      --  bias...
-      Gain : Sensor_Gain := 1090;
+      Gain    : Sensor_Gain := 1090;
+      Bias    : Self_Test_Bias := None;
    end record;
 
    type Operating_Mode is

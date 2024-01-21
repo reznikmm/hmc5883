@@ -48,7 +48,10 @@ package HMC5883.Internal is
       Success : out Boolean);
    --  Write Mode Register (02)
 
-   function Measuring (Device  : Device_Context) return Boolean;
+   function Is_Idle (Device  : Device_Context) return Boolean;
+   --  Check if the operating mode is idle
+
+   function Is_Writing (Device  : Device_Context) return Boolean;
    --  Check Status Register (09)
 
    procedure Read_Measurement

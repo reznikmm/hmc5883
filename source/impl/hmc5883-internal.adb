@@ -82,6 +82,8 @@ package body HMC5883.Internal is
          elsif Value.ODR =  30.0  then 5
          else 6);
 
+      MS : constant Natural := Self_Test_Bias'Pos (Value.Bias);
+
       GN : constant Raw_Gain :=
         (case Value.Gain is
             when 230  => 7,
@@ -94,18 +96,33 @@ package body HMC5883.Internal is
             when 1370 => 0);
 
       Data : constant HAL.UInt8_Array (00 .. 01) :=
-        [00 => Cast_CRA ((MS => 0, DOR => DOR, MA => MA, Reserved => 0)),
+        [00 => Cast_CRA ((MS => MS, DOR => DOR, MA => MA, Reserved => 0)),
          01 => Cast_CRB ((GN => GN, Reserved => 0))];
    begin
       Write (Device, Data, Success);
       Gain := GN;
    end Configure;
 
-   ---------------
-   -- Measuring --
-   ---------------
+   -------------
+   -- Is_Idle --
+   -------------
 
-   function Measuring (Device : Device_Context) return Boolean is
+   function Is_Idle (Device  : Device_Context) return Boolean is
+      use type HAL.UInt8;
+
+      Ok   : Boolean;
+      Data : HAL.UInt8_Array (02 .. 02);
+   begin
+      Read (Device, Data, Ok);
+
+      return Ok and (Data (Data'First) and 2) /= 0;
+   end Is_Idle;
+
+   ----------------
+   -- Is_Writing --
+   ----------------
+
+   function Is_Writing (Device : Device_Context) return Boolean is
       use type HAL.UInt8;
 
       Ok   : Boolean;
@@ -113,20 +130,14 @@ package body HMC5883.Internal is
    begin
       Read (Device, Data, Ok);
 
-      return Ok and (Data (Data'First) and 8) = 0;
-    end Measuring;
+      --  0 bit - Ready Bit. Set when data is written to all six data
+      --  registers. Cleared when device initiates a write to the data output
+      --  registers and after one or more of the data output registers are
+      --  written to. When RDY bit is clear it shall remain cleared for a
+      --  250 us
 
-   --------------
-   -- Set_Mode --
-   --------------
-
-   procedure Set_Mode
-     (Device  : Device_Context;
-      Mode    : Operating_Mode;
-      Success : out Boolean) is
-   begin
-      Write (Device, [02 => Operating_Mode'Pos (Mode)], Success);
-   end Set_Mode;
+      return Ok and (Data (Data'First) and 1) = 0;
+    end Is_Writing;
 
    ----------------------
    -- Read_Measurement --
@@ -190,5 +201,17 @@ package body HMC5883.Internal is
          Value.Z := Decode (Data (7 .. 8));
       end if;
    end Read_Raw_Measurement;
+
+   --------------
+   -- Set_Mode --
+   --------------
+
+   procedure Set_Mode
+     (Device  : Device_Context;
+      Mode    : Operating_Mode;
+      Success : out Boolean) is
+   begin
+      Write (Device, [02 => Operating_Mode'Pos (Mode)], Success);
+   end Set_Mode;
 
 end HMC5883.Internal;

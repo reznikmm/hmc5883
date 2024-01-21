@@ -30,8 +30,11 @@ package HMC5883.I2C is
       Success : out Boolean);
    --  Select the operating mode of the device.
 
-   function Measuring return Boolean;
-   --  Check if a measurement is in progress
+   function Is_Idle return Boolean;
+   --  Check if the operating mode is idle
+
+   function Is_Writing return Boolean;
+   --  The sensor is busy with writing new measurement into registers
 
    procedure Read_Measurement
      (Value   : out Magnetic_Field_Vector;
