@@ -7,9 +7,7 @@ pragma Ada_2022;
 
 with HMC5883.Internal;
 
-package body HMC5883.I2C is
-
-   I2C_Address : constant := 16#1E#;
+package body HMC5883.Sensor is
 
    type Chip_Settings is record
       Gain : Natural range 0 .. 7 := 1;
@@ -151,4 +149,4 @@ package body HMC5883.I2C is
       Success := Status = HAL.I2C.Ok;
    end Write;
 
-end HMC5883.I2C;
+end HMC5883.Sensor;

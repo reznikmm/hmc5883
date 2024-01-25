@@ -16,12 +16,12 @@ with STM32.Setup;
 
 with HAL.I2C;
 
-with HMC5883.I2C;
+with HMC5883.Sensor;
 
 procedure Main is
    use type Ada.Real_Time.Time;
 
-   package HMC5883_I2C is new HMC5883.I2C
+   package HMC5883_I2C is new HMC5883.Sensor
      (I2C_Port => STM32.Device.I2C_1'Access);
 
    Ok     : Boolean := False;
@@ -75,7 +75,7 @@ begin
          pragma Assert (Ok);
 
          --  Wait operation mode to become idle
-         while HMC5883_I2C.Is_Idle loop
+         while not HMC5883_I2C.Is_Idle loop
             Spinned := Spinned + 1;
          end loop;
 

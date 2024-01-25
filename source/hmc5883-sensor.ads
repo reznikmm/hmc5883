@@ -11,8 +11,8 @@
 with HAL.I2C;
 
 generic
-   I2C_Port    : not null HAL.I2C.Any_I2C_Port;
-package HMC5883.I2C is
+   I2C_Port : not null HAL.I2C.Any_I2C_Port;
+package HMC5883.Sensor is
 
    function Check_Chip_Id return Boolean;
    --  Read the chip ID and check that it matches the expected value.
@@ -46,4 +46,4 @@ package HMC5883.I2C is
       Success : out Boolean);
    --  Read the raw measurement values from the sensor
 
-end HMC5883.I2C;
+end HMC5883.Sensor;

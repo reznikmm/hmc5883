@@ -120,4 +120,6 @@ private
       6 => 1.0 / 330.0,
       7 => 1.0 / 230.0);
 
+   I2C_Address : constant := 16#1E#;
+
 end HMC5883;
