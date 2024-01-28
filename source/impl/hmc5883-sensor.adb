@@ -132,19 +132,12 @@ package body HMC5883.Sensor is
 
       Status : HAL.I2C.I2C_Status;
    begin
-      if Data'Length = 0 then
-         I2C_Port.Master_Transmit
-           (Addr          => 2 * HAL.UInt10 (I2C_Address),
-            Data          => [HAL.UInt8 (Data'First)],
-            Status        => Status);
-      else
-         I2C_Port.Mem_Write
-           (Addr          => 2 * HAL.UInt10 (I2C_Address),
-            Mem_Addr      => HAL.UInt16 (Data'First),
-            Mem_Addr_Size => HAL.I2C.Memory_Size_8b,
-            Data          => Data,
-            Status        => Status);
-      end if;
+      I2C_Port.Mem_Write
+        (Addr          => 2 * HAL.UInt10 (I2C_Address),
+         Mem_Addr      => HAL.UInt16 (Data'First),
+         Mem_Addr_Size => HAL.I2C.Memory_Size_8b,
+         Data          => Data,
+         Status        => Status);
 
       Success := Status = HAL.I2C.Ok;
    end Write;
