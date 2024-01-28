@@ -19,8 +19,7 @@ and up to 160 Hz output rate.
 The HMC5883L driver enables the following functionalities:
 
 - Detect the presence of the sensor.
-- Perform a reset operation.
-- Configure XXX...
+- Configure the sensor (average count, gain, self-test bias)
 - Conduct measurements as raw 12-bit values and scaled values.
 
 ## Install
@@ -39,7 +38,7 @@ Generic instantiation looks like this:
 
 ```ada
 declare
-   package HMC5883_I2C is new HCM5883.I2C
+   package HMC5883_I2C is new HCM5883.Sensor
      (I2C_Port => STM32.Device.I2C_1'Access);
 
 begin
@@ -51,12 +50,58 @@ While declaring object of the tagged type looks like this:
 
 ```ada
 declare
-   Sensor : HMC5883.I2C_Sensors.HMC5883_I2C_Sensor :=
+   Sensor : HMC5883.Sensors.HMC5883_Sensor
      (I2C_Port => STM32.Device.I2C_1'Access);
 begin
    if Sensor.Check_Chip_Id then
       ...
 ```
+
+### Sensor Configuration
+
+To configure the sensor, use the Configure procedure by passing the settings
+(`Sensor_Configuration` type).
+
+Settings include:
+
+- `Average`: Return the average value from the last 8, 4, 2, or 1
+  measurements. This setting does not affect the measurement frequency.
+
+- `ODR` (Output Data Rate): Desired measurement frequency from a predefined
+  list of values. Only applicable in Continuous-Measurement Mode.
+
+- `Gain`: Sensor sensitivity from a predefined list of values.
+
+- `Bias`: Switch between normal mode and self-test mode. In self-test mode,
+  the induced field is measured. This mode can be used for sensor
+  verification or calculating the temperature influence on sensor readings.
+
+### Sensor Mode
+
+Change the sensor mode using the `Set_Mode` procedure by passing one of three
+values: `Continuous_Measurement`, `Single_Measurement`, `Idle`.
+
+In `Single_Measurement` mode, the sensor performs one measurement and then
+enters `Idle`. The other two modes need to be changed manually.
+
+The best way to determine data readiness is through interrupts using
+a separate pin. Otherwise you can ascertain that the data is ready by
+monitoring the sensor's registers, specifically by observing the
+`Is_Writing` status. This value briefly becomes `True` (250 μs),
+and when it becomes `False` again, new data can be read.
+
+Another option is to initiate a single measurement using
+`Single_Measurement` mode and read the data after >1/160s.
+
+### Read Measurement
+
+Read raw data (as provided by the sensor) with the `Read_Raw_Measurement`
+procedure.
+
+Calling `Read_Measurement` returns scaled measurements in Gauss based on
+the current Gain setting.
+
+The sensor signals overflow for each axis separately.
 
 ## Examples
 
