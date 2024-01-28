@@ -9,7 +9,7 @@ package HMC5883 is
    pragma Preelaborate;
    pragma Discard_Names;
 
-   subtype Average_Count is Positive range 1 .. 8
+   type Average_Count is range 1 .. 8
      with Static_Predicate => Average_Count in 1 | 2 | 4 | 8;
 
    type Output_Data_Rate is delta 0.25 range 0.75 .. 75.0
@@ -18,7 +18,7 @@ package HMC5883 is
    --
    --  Typical Data Output Rate (Hz)
 
-   subtype Sensor_Gain is Positive range 230 .. 1370
+   type Sensor_Gain is range 230 .. 1370
      with Static_Predicate =>
        Sensor_Gain in 230 | 330 | 390 | 440 | 660 | 820 | 1090 | 1370;
    --

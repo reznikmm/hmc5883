@@ -98,6 +98,8 @@ procedure Main is
    ----------------------
 
    procedure Configure_Sensor is
+      use type HMC5883.Average_Count;
+
       Ok   : Boolean;
       Avg  : HMC5883.Average_Count := 1;
       Gain : HMC5883.Sensor_Gain;
