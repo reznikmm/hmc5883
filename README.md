@@ -127,3 +127,5 @@ to launch pre-configured debugger targets.
 
 - [Simple example for STM32 F4VE board](examples/hmc5883_put) - complete
   example for the generic instantiation.
+- [Advanced example for STM32 F4VE board and LCD & touch panel](examples/hmc5883_lcd) -
+  complete example of the tagged type usage.
