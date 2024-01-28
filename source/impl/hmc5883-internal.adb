@@ -55,7 +55,7 @@ package body HMC5883.Internal is
 
       type CRB_Register is record
          Reserved : Natural range 0 .. 0 := 0;
-         GN       : Natural range 0 .. 3;
+         GN       : Natural range 0 .. 7;
       end record;
 
       for CRB_Register use record

@@ -3,8 +3,6 @@
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 ----------------------------------------------------------------
 
-pragma Ada_2022;
-
 with Ada.Real_Time;
 with Ada.Text_IO;
 
@@ -27,8 +25,6 @@ procedure Main is
    Ok     : Boolean := False;
    Vector : array (1 .. 16) of HMC5883.Magnetic_Field_Vector;
    Prev   : Ada.Real_Time.Time;
-
-   Spinned : Natural;
 begin
    STM32.Board.Initialize_LEDs;
    STM32.Setup.Setup_I2C_Master
@@ -42,9 +38,10 @@ begin
    declare
       Status : HAL.I2C.I2C_Status;
    begin
+      --  Workaround for STM32 I2C driver bug
       STM32.Device.I2C_1.Master_Transmit
         (Addr    => 16#3C#,
-         Data    => [16#0A#],  --  Chip ID for HMC5883L
+         Data    => (1 => 16#0A#),  --  Chip ID for HMC5883L
          Status  => Status);
    end;
 
@@ -56,15 +53,14 @@ begin
 
    --  Set HMC5883L up
    HMC5883_I2C.Configure
-     ((Average => 8,
-       ODR     => 15.0,
-       Gain    => 1090,
+     ((Average => 1,     --  no average
+       ODR     => 15.0,  --  doesn't matter in single measurement mode
+       Gain    => 1090,  --  default gain
        Bias    => HMC5883.None),
       Ok);
    pragma Assert (Ok);
 
    loop
-      Spinned := 0;
       Prev := Ada.Real_Time.Clock;
       STM32.Board.Toggle (STM32.Board.D1_LED);
 
@@ -74,10 +70,7 @@ begin
          HMC5883_I2C.Set_Mode (HMC5883.Single_Measurement, Ok);
          pragma Assert (Ok);
 
-         --  Wait operation mode to become idle
-         while not HMC5883_I2C.Is_Idle loop
-            Spinned := Spinned + 1;
-         end loop;
+         Ravenscar_Time.Delays.Delay_Milliseconds (1000/150);  --  150 Hz
 
          --  Read scaled values from the sensor
          HMC5883_I2C.Read_Measurement (Vector (J), Ok);
@@ -91,21 +84,24 @@ begin
       begin
          Ada.Text_IO.New_Line;
          Ada.Text_IO.New_Line;
-         Ada.Text_IO.Put_Line
-           ("Time=" & Diff'Image & "/16 Spinned=" & Spinned'Image);
+         Ada.Text_IO.Put_Line ("Time=" & Diff'Image & "/16");
 
          for Value of Vector loop
-            if Value.X.Is_Overflow
-              or Value.X.Is_Overflow
-              or Value.X.Is_Overflow
-            then
-               Ada.Text_IO.Put_Line ("Overflow");
-            else
-               Ada.Text_IO.Put_Line
-                 ("X=" & Value.X.Value'Image &
-                    " Y=" & Value.Y.Value'Image &
-                    " Z=" & Value.Z.Value'Image);
-            end if;
+            declare
+               X : constant String :=
+                 (if Value.X.Is_Overflow then "Overflow"
+                  else Value.X.Value'Image);
+
+               Y : constant String :=
+                 (if Value.Y.Is_Overflow then "Overflow"
+                  else Value.Y.Value'Image);
+
+               Z : constant String :=
+                 (if Value.Z.Is_Overflow then "Overflow"
+                  else Value.Z.Value'Image);
+            begin
+               Ada.Text_IO.Put_Line ("X=" & X & " Y=" & Y & " Z=" & Z);
+            end;
          end loop;
 
          Ada.Text_IO.Put_Line ("Sleeping 2s...");
