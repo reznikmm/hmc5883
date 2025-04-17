@@ -103,6 +103,74 @@ the current Gain setting.
 
 The sensor signals overflow for each axis separately.
 
+### Low-Level Interface: `HMC5883.Raw`
+
+The `HMC5883.Raw` package provides a low-level interface for interacting with
+the HMC5883 sensor. This package is designed to handle encoding and decoding
+of sensor register values, while allowing users to implement the actual
+read/write operations in a way that suits their hardware setup. The
+communication with the sensor is done by reading or writing one or more bytes
+to predefined registers. This package does not depend on HAL and can be used
+with DMA or any other method of interacting with the sensor.
+
+#### Purpose of HMC5883.Raw
+
+The package defines array subtypes where the index represents the register
+number, and the value corresponds to the register's data. Functions in this
+package help prepare and interpret the register values. For example, functions
+prefixed with `Set_` create the values for writing to registers, while those
+prefixed with `Get_` decode the values read from registers. Additionally,
+functions starting with `Is_` handle boolean logic values, such as checking
+if the sensor is measuring or updating.
+
+Users are responsible for implementing the reading and writing of these
+register values to the sensor.
+
+#### I2C Functions
+
+The package also provides helper functions for handling I2C
+communication with the sensor. For write operations, the register
+address is sent first, followed by one or more data bytes, as the
+sensor allows multi-byte writes. For read operations, the register
+address is sent first, and then consecutive data can be read without
+needing to specify the address for each subsequent byte.
+
+- Two functions prefix a byte array with the register address:
+
+  ```ada
+    function I2C_Write (X : Byte_Array) return Byte_Array;
+    function I2C_Read (X : Byte_Array) return Byte_Array;
+  ```
+
+These functions help abstract the specifics of I2C communication,
+making it easier to focus on the sensor’s register interactions without
+worrying about protocol details. For example, you configure the sensor
+with low power preset:
+
+```ada
+declare
+   Data : Byte_Array := HMC5883.Raw.I2C_Write
+    (HMC5883.Raw.Set_Mode
+      (HMC5883.Continuous_Measurement));
+begin
+   --  Now write Data to the sensor by I2C.
+   --  The write sends register address and actual data.
+```
+
+The reading looks like this:
+
+```ada
+declare
+   Data   : Byte_Array := HMC5883.Raw.I2C_Read
+    ((HMC5883.Raw.Measurement_Data => <>));
+   Result : HMC5883.Magnetic_Field_Vector;
+begin
+   --  Start I2C exchange (read/write). The exchange should
+   --  write the first byte of Data, then read Data'Range bytes.
+   --  After exchange decode Data:
+   Result := HMC5883.Raw.Get_Measurement (Data, Scale);
+```
+
 ## Examples
 
 You need `Ada_Drivers_Library` in `adl` directory. Clone it then run Alire
