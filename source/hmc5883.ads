@@ -1,4 +1,4 @@
---  SPDX-FileCopyrightText: 2024 Max Reznik <reznikmm@gmail.com>
+--  SPDX-FileCopyrightText: 2025 Max Reznik <reznikmm@gmail.com>
 --
 --  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 ----------------------------------------------------------------
@@ -102,10 +102,24 @@ package HMC5883 is
    --  A value read from the sensor in raw format. Normal value has range
    --  -2048 .. 2047, while -4096 means overflow.
 
-private
+   subtype Byte is Interfaces.Unsigned_8;  --  Register value
+
+   subtype Register_Address is Natural range 16#00# .. 16#FF#;
+   --  Sensor's register address
+
+   type Byte_Array is array (Register_Address'Base range <>) of Byte;
+   --  Bytes to be exchanged with registers. Index is a register address, while
+   --  elements are corresponding register values.
+
+   Chip_Id : constant Byte_Array (1 .. 3) := (16#48#, 16#34#, 16#33#);
 
    type Full_Scale_Range is delta 1.0 / 2.0 ** 23 range 0.0 .. 0.005;
    --  Gauss per LSB
+
+   function To_Scale (Gain : Sensor_Gain) return Full_Scale_Range;
+   --  Get Gauss per LSB for given gain setting
+
+private
 
    pragma Warnings
      (Off, "static fixed-point value is not a multiple of Small");
@@ -119,6 +133,17 @@ private
       5 => 1.0 / 390.0,
       6 => 1.0 / 330.0,
       7 => 1.0 / 230.0);
+
+   function To_Scale (Gain : Sensor_Gain) return Full_Scale_Range is
+     (case Gain is
+      when 230  => 1.0 / 230.0,
+      when 330  => 1.0 / 330.0,
+      when 390  => 1.0 / 390.0,
+      when 440  => 1.0 / 440.0,
+      when 660  => 1.0 / 660.0,
+      when 820  => 1.0 / 820.0,
+      when 1090 => 1.0 / 1090.0,
+      when 1370 => 1.0 / 1370.0);
 
    I2C_Address : constant := 16#1E#;
 
