@@ -22,7 +22,7 @@ package HMC5883 is
      with Static_Predicate =>
        Sensor_Gain in 230 | 330 | 390 | 440 | 660 | 820 | 1090 | 1370;
    --
-   --  LSB (Least-signed-bit) per one Gauss.
+   --  Sensitivity, LSB (Least-signed-bit) per one Gauss.
    --  Use this to convert raw counts to Gauss.
    --
    --  The new gain setting is effective from the second measurement and on.
@@ -119,20 +119,8 @@ package HMC5883 is
    function To_Scale (Gain : Sensor_Gain) return Full_Scale_Range;
    --  Get Gauss per LSB for given gain setting
 
-private
-
    pragma Warnings
      (Off, "static fixed-point value is not a multiple of Small");
-
-   Scale_Map : constant array (0 .. 7) of Full_Scale_Range :=
-     (0 => 1.0 / 1370.0,
-      1 => 1.0 / 1090.0,
-      2 => 1.0 / 820.0,
-      3 => 1.0 / 660.0,
-      4 => 1.0 / 440.0,
-      5 => 1.0 / 390.0,
-      6 => 1.0 / 330.0,
-      7 => 1.0 / 230.0);
 
    function To_Scale (Gain : Sensor_Gain) return Full_Scale_Range is
      (case Gain is
@@ -144,7 +132,50 @@ private
       when 820  => 1.0 / 820.0,
       when 1090 => 1.0 / 1090.0,
       when 1370 => 1.0 / 1370.0);
+   --  Convert gain/sensitivity to scale
+
+   function To_Magnetic_Field
+     (V : Valid_Raw_Value; Scale : Full_Scale_Range) return Magnetic_Field;
+   --  Convert raw sensor data to magnetic field with given scale
+
+   function To_Magnetic_Field
+     (V : Valid_Raw_Value; Gain : Sensor_Gain) return Magnetic_Field;
+   --  Convert raw sensor data to magnetic field with given gain/sensitivity
+
+   function To_Raw_Value
+     (V : Magnetic_Field; Gain : Sensor_Gain) return Valid_Raw_Value;
+   --  Convert magnetic field to a raw sensor value with given gain/sensitivity
 
    I2C_Address : constant := 16#1E#;
+   --  Defaulr I2C device address
+
+private
+
+   Scale_Map : constant array (0 .. 7) of Full_Scale_Range :=
+     (0 => 1.0 / 1370.0,
+      1 => 1.0 / 1090.0,
+      2 => 1.0 / 820.0,
+      3 => 1.0 / 660.0,
+      4 => 1.0 / 440.0,
+      5 => 1.0 / 390.0,
+      6 => 1.0 / 330.0,
+      7 => 1.0 / 230.0);
+
+   pragma Warnings
+     (On, "static fixed-point value is not a multiple of Small");
+
+   type Int is delta 1.0 range -2048.0 .. 2047.0;
+
+   function To_Magnetic_Field
+     (V : Valid_Raw_Value; Scale : Full_Scale_Range) return Magnetic_Field is
+       (Scale * Int (V));
+
+   function To_Magnetic_Field
+     (V : Valid_Raw_Value; Gain : Sensor_Gain) return Magnetic_Field is
+       (To_Scale (Gain) * Int (V));
+
+   function To_Raw_Value
+     (V : Magnetic_Field; Gain : Sensor_Gain) return Valid_Raw_Value is
+       (Valid_Raw_Value (Int'(Int (Gain) * V)));
 
 end HMC5883;

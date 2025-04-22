@@ -20,15 +20,16 @@ package body HMC5883.Raw is
       Vector   : constant Raw_Vector := Get_Raw_Measurement (Raw);
       Overflow : constant Optional_Magnetic_Field := (Is_Overflow => True);
 
-      type Int is delta 1.0 range -2048.0 .. 2047.0;
-
    begin
       return
-        (X => (if Vector.X in Valid then (False, Scale * Int (Vector.X))
+        (X => (if Vector.X in Valid
+               then (False, To_Magnetic_Field (Vector.X, Scale))
                else Overflow),
-         Y => (if Vector.Y in Valid then (False, Scale * Int (Vector.Y))
+         Y => (if Vector.Y in Valid
+               then (False, To_Magnetic_Field (Vector.Y, Scale))
                else Overflow),
-         Z => (if Vector.Z in Valid then (False, Scale * Int (Vector.Z))
+         Z => (if Vector.Z in Valid
+               then (False, To_Magnetic_Field (Vector.Z, Scale))
                else Overflow));
    end Get_Measurement;
 
