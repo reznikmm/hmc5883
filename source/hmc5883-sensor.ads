@@ -37,7 +37,7 @@ package HMC5883.Sensor is
    --  The sensor is busy with writing new measurement into registers
 
    procedure Read_Measurement
-     (Value   : out Magnetic_Field_Vector;
+     (Value   : out Optional_Magnetic_Field_Vector;
       Success : out Boolean);
    --  Read scaled measurement values from the sensor
 

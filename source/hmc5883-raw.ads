@@ -94,7 +94,7 @@ package HMC5883.Raw is
 
    function Get_Measurement
      (Raw   : Byte_Array;
-      Scale : Full_Scale_Range) return Magnetic_Field_Vector
+      Scale : Full_Scale_Range) return Optional_Magnetic_Field_Vector
      with Pre => Measurement_Data'First in Raw'Range and then
        Measurement_Data'Last in Raw'Range;
    --

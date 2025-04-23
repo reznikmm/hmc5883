@@ -137,7 +137,7 @@ package body HMC5883.Internal is
       --  250 us
 
       return Ok and (Data (Data'First) and 1) = 0;
-    end Is_Writing;
+   end Is_Writing;
 
    ----------------------
    -- Read_Measurement --
@@ -146,12 +146,10 @@ package body HMC5883.Internal is
    procedure Read_Measurement
      (Device  : Device_Context;
       Gain    : Raw_Gain;
-      Value   : out Magnetic_Field_Vector;
+      Value   : out Optional_Magnetic_Field_Vector;
       Success : out Boolean)
    is
       subtype Valid is Valid_Raw_Value;
-
-      Overflow : constant Optional_Magnetic_Field := (Is_Overflow => True);
 
       type Int is delta 1.0 range -2048.0 .. 2047.0;
 
@@ -162,14 +160,13 @@ package body HMC5883.Internal is
 
       if Success then
          Value :=
-           (X => (if Raw.X in Valid then (False, Scale * Int (Raw.X))
-                  else Overflow),
-            Y => (if Raw.Y in Valid then (False, Scale * Int (Raw.Y))
-                  else Overflow),
-            Z => (if Raw.Z in Valid then (False, Scale * Int (Raw.Z))
-                  else Overflow));
+           (X => (if Raw.X in Valid then Scale * Int (Raw.X) else 0.0),
+            Y => (if Raw.Y in Valid then Scale * Int (Raw.Y) else 0.0),
+            Z => (if Raw.Z in Valid then Scale * Int (Raw.Z) else 0.0),
+            Overflow => not
+              (Raw.X in Valid and Raw.Y in Valid and Raw.Z in Valid));
       else
-         Value := (X | Y | Z => Overflow);
+         Value := (X | Y | Z => 0.0, Overflow => True);
       end if;
    end Read_Measurement;
 

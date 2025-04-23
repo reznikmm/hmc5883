@@ -13,24 +13,19 @@ package body HMC5883.Raw is
 
    function Get_Measurement
      (Raw   : Byte_Array;
-      Scale : Full_Scale_Range) return Magnetic_Field_Vector
+      Scale : Full_Scale_Range) return Optional_Magnetic_Field_Vector
    is
       subtype Valid is Valid_Raw_Value;
 
-      Vector   : constant Raw_Vector := Get_Raw_Measurement (Raw);
-      Overflow : constant Optional_Magnetic_Field := (Is_Overflow => True);
+      Vector : constant Raw_Vector := Get_Raw_Measurement (Raw);
 
    begin
       return
-        (X => (if Vector.X in Valid
-               then (False, To_Magnetic_Field (Vector.X, Scale))
-               else Overflow),
-         Y => (if Vector.Y in Valid
-               then (False, To_Magnetic_Field (Vector.Y, Scale))
-               else Overflow),
-         Z => (if Vector.Z in Valid
-               then (False, To_Magnetic_Field (Vector.Z, Scale))
-               else Overflow));
+        (X => (if Vector.X in Valid then Scale * Int (Vector.X) else 0.0),
+         Y => (if Vector.Y in Valid then Scale * Int (Vector.Y) else 0.0),
+         Z => (if Vector.Z in Valid then Scale * Int (Vector.Z) else 0.0),
+         Overflow => not
+           (Vector.X in Valid and Vector.Y in Valid and Vector.Z in Valid));
    end Get_Measurement;
 
    -------------------------

@@ -90,7 +90,7 @@ package body HMC5883.Sensor is
    ----------------------
 
    procedure Read_Measurement
-     (Value   : out Magnetic_Field_Vector;
+     (Value   : out Optional_Magnetic_Field_Vector;
       Success : out Boolean) is
    begin
       Sensor.Read_Measurement (Chip, Chip.Gain, Value, Success);

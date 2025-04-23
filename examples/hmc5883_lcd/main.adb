@@ -38,7 +38,7 @@ procedure Main is
       X, Y, Z : HMC5883.Magnetic_Field'Base;
    end record;
 
-   function Read_Sensor return HMC5883.Magnetic_Field_Vector;
+   function Read_Sensor return HMC5883.Optional_Magnetic_Field_Vector;
 
    function Min (Left, Right : Sensor_Data)
      return Sensor_Data is
@@ -69,11 +69,13 @@ procedure Main is
         Y => Left.Y + Right.Y,
         Z => Left.Z + Right.Z);
 
-   function Is_Overflow (V : HMC5883.Magnetic_Field_Vector) return Boolean is
-     (V.X.Is_Overflow or V.Y.Is_Overflow or V.Z.Is_Overflow);
-
-   function To_Data (V : HMC5883.Magnetic_Field_Vector) return Sensor_Data is
-     (V.X.Value, V.Y.Value, V.Z.Value);
+   function To_Data
+     (V : HMC5883.Optional_Magnetic_Field_Vector) return Sensor_Data is
+     (if HMC5883.Has_Overflow (V) then (0.0, 0.0, 0.0)
+      else
+        (HMC5883.To_Magnetic_Field_Vector (V).X,
+         HMC5883.To_Magnetic_Field_Vector (V).Y,
+         HMC5883.To_Magnetic_Field_Vector (V).Z));
 
    type Sensor_Limits is record
       Min : Sensor_Data;
@@ -85,7 +87,7 @@ procedure Main is
 
    procedure Print
      (LCD    : not null HAL.Bitmap.Any_Bitmap_Buffer;
-      Data   : HMC5883.Magnetic_Field_Vector);
+      Data   : HMC5883.Optional_Magnetic_Field_Vector);
 
    procedure Plot
      (LCD    : not null HAL.Bitmap.Any_Bitmap_Buffer;
@@ -149,17 +151,19 @@ procedure Main is
 
    procedure Print
      (LCD    : not null HAL.Bitmap.Any_Bitmap_Buffer;
-      Data   : HMC5883.Magnetic_Field_Vector)
+      Data   : HMC5883.Optional_Magnetic_Field_Vector)
    is
+      Overflow : constant Boolean := HMC5883.Has_Overflow (Data);
+      V        : constant HMC5883.Magnetic_Field_Vector :=
+        (if Overflow then  (0.0, 0.0, 0.0)
+         else HMC5883.To_Magnetic_Field_Vector (Data));
+
       TX : constant String :=
-        (if Data.X.Is_Overflow then "Over"
-         else HMC5883.Magnetic_Field'Image (Data.X.Value));
+        (if Overflow then "Over" else HMC5883.Magnetic_Field'Image (V.X));
       TY : constant String :=
-        (if Data.Y.Is_Overflow then "Over"
-         else HMC5883.Magnetic_Field'Image (Data.Y.Value));
+        (if Overflow then "Over" else HMC5883.Magnetic_Field'Image (V.Y));
       TZ : constant String :=
-        (if Data.Z.Is_Overflow then "Over"
-         else HMC5883.Magnetic_Field'Image (Data.Z.Value));
+        (if Overflow then "Over" else HMC5883.Magnetic_Field'Image (V.Z));
    begin
       if GUI.State (+Fx) then
          Bitmapped_Drawing.Draw_String
@@ -236,9 +240,9 @@ procedure Main is
    -- Read_Sensor --
    -----------------
 
-   function Read_Sensor return HMC5883.Magnetic_Field_Vector is
+   function Read_Sensor return HMC5883.Optional_Magnetic_Field_Vector is
       Ok     : Boolean;
-      Result : HMC5883.Magnetic_Field_Vector;
+      Result : HMC5883.Optional_Magnetic_Field_Vector;
    begin
       while Sensor.Is_Writing loop
          Ravenscar_Time.Delays.Delay_Microseconds (50);
@@ -296,12 +300,12 @@ begin
    Configure_Sensor;
 
    declare
-      Vector : HMC5883.Magnetic_Field_Vector;
+      Vector : HMC5883.Optional_Magnetic_Field_Vector;
    begin
       loop
          Vector := Read_Sensor;
 
-         exit when not Is_Overflow (Vector);
+         exit when not HMC5883.Has_Overflow (Vector);
       end loop;
 
       Next_Limits.Min := To_Data (Vector);
@@ -313,7 +317,7 @@ begin
 
    loop
       declare
-         Vector : HMC5883.Magnetic_Field_Vector;
+         Vector : HMC5883.Optional_Magnetic_Field_Vector;
          Data   : Sensor_Data;
          Update : Boolean := False;  --  GUI state updated
       begin
@@ -330,7 +334,7 @@ begin
 
             GUI.Draw (LCD.all);
 
-            if Is_Overflow (Vector) then
+            if HMC5883.Has_Overflow (Vector) then
                Print (LCD, Vector);
             else
                Data := To_Data (Vector);

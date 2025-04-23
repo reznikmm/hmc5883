@@ -6,6 +6,7 @@
 with Ada.Real_Time;
 with Ada.Text_IO;
 
+with HMC5883;
 with Ravenscar_Time;
 
 with STM32.Board;
@@ -23,13 +24,13 @@ procedure Main is
      (I2C_Port => STM32.Device.I2C_1'Access);
 
    Ok     : Boolean := False;
-   Vector : array (1 .. 16) of HMC5883.Magnetic_Field_Vector;
+   Vector : array (1 .. 16) of HMC5883.Optional_Magnetic_Field_Vector;
    Prev   : Ada.Real_Time.Time;
 begin
    STM32.Board.Initialize_LEDs;
    STM32.Setup.Setup_I2C_Master
      (Port        => STM32.Device.I2C_1,
-      SDA         => STM32.Device.PB9,
+      SDA         => STM32.Device.PB7,
       SCL         => STM32.Device.PB8,
       SDA_AF      => STM32.Device.GPIO_AF_I2C1_4,
       SCL_AF      => STM32.Device.GPIO_AF_I2C1_4,
@@ -88,17 +89,20 @@ begin
 
          for Value of Vector loop
             declare
+               Overflow : constant Boolean := HMC5883.Has_Overflow (Value);
+
+               V : constant HMC5883.Magnetic_Field_Vector :=
+                 (if Overflow then (0.0, 0.0, 0.0)
+                  else HMC5883.To_Magnetic_Field_Vector (Value));
+
                X : constant String :=
-                 (if Value.X.Is_Overflow then "Overflow"
-                  else Value.X.Value'Image);
+                 (if Overflow then "Overflow" else V.X'Image);
 
                Y : constant String :=
-                 (if Value.Y.Is_Overflow then "Overflow"
-                  else Value.Y.Value'Image);
+                 (if Overflow then "Overflow" else V.Y'Image);
 
                Z : constant String :=
-                 (if Value.Z.Is_Overflow then "Overflow"
-                  else Value.Z.Value'Image);
+                 (if Overflow then "Overflow" else V.Z'Image);
             begin
                Ada.Text_IO.Put_Line ("X=" & X & " Y=" & Y & " Z=" & Z);
             end;

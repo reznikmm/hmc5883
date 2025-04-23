@@ -72,18 +72,21 @@ package HMC5883 is
    type Magnetic_Field is delta 1.0 / 2.0 ** 11 range -10.0 .. 10.0;
    --  Magnetic flux density in Gauss
 
-   type Optional_Magnetic_Field (Is_Overflow : Boolean := True) is record
-      case Is_Overflow is
-         when False =>
-            Value : Magnetic_Field;
-         when True =>
-            null;
-      end case;
-   end record;
+   type Optional_Magnetic_Field_Vector is private;
+   --  Magnetic field vector with overflow flag
+
+   function Has_Overflow (V : Optional_Magnetic_Field_Vector) return Boolean;
+   --  Check if vector any magnetic field component of V has overflow
 
    type Magnetic_Field_Vector is record
-      X, Y, Z : Optional_Magnetic_Field;
+      X, Y, Z : Magnetic_Field;
    end record;
+   --  Magnetic field vector with no overflow
+
+   function To_Magnetic_Field_Vector
+     (V : Optional_Magnetic_Field_Vector) return Magnetic_Field_Vector
+       with Pre => not Has_Overflow (V);
+   --  Fetch magnetic field vector from V if it has no overflow
 
    Overflow : constant := -4096;
    --  In the event the ADC reading overflows or underflows for the given
@@ -177,5 +180,18 @@ private
    function To_Raw_Value
      (V : Magnetic_Field; Gain : Sensor_Gain) return Valid_Raw_Value is
        (Valid_Raw_Value (Int'(Int (Gain) * V)));
+
+   type Optional_Magnetic_Field_Vector is record
+      X, Y, Z  : Magnetic_Field;
+      Overflow : Boolean;  --  Any of X, Y, Z has overflow
+   end record;
+
+   function Has_Overflow
+     (V : Optional_Magnetic_Field_Vector) return Boolean is
+       (V.Overflow);
+
+   function To_Magnetic_Field_Vector
+     (V : Optional_Magnetic_Field_Vector) return Magnetic_Field_Vector is
+       (V.X, V.Y, V.Z);
 
 end HMC5883;
