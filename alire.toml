@@ -10,6 +10,22 @@ website = "https://github.com/reznikmm/hmc5883"
 tags = ["sensor", "magnetometer", "driver"]
 project-files = ["gnat/hmc5883.gpr"]
 
+long-description = '''
+# Driver for HMC5883L magnetic sensor.
+
+The HMC5883L driver enables the following functionalities:
+
+- Detect the presence of the sensor.
+- Configure the sensor (average count, gain, self-test bias)
+- Conduct measurements as raw 12-bit values and scaled values.
+
+The driver supports usage both with and without the Ada Driver Library,
+either via generic instantiation or by instantiating tagged type object.
+
+More drivers in this style:
+[driver index](https://github.com/reznikmm/reznikmm/blob/main/drivers.md).
+'''
+
 [configuration]
 output_dir = "gnat"
 generate_ada = false
